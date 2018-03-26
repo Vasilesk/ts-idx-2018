@@ -32,14 +32,17 @@ class DocumentStreamReader:
 
 def parse_command_line():
     parser = argparse.ArgumentParser(description='compressed documents reader')
+    parser.add_argument('encoding', nargs=1, help='Encoding method (varbyte|simple9)')
     parser.add_argument('files', nargs='+', help='Input files (.gz or plain) to process')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     di = Docindex()
-    # di.from_file('index.pickle')
-    reader = DocumentStreamReader(parse_command_line().files)
+    args = parse_command_line()
+    reader = DocumentStreamReader(args.files)
+    # print args.encoding
+    # print args.files
     for doc in reader:
         print "%s\t%d bytes" % (doc.url, len(doc.text))
         words = extract_words(doc.text)

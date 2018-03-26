@@ -36,7 +36,6 @@ class Docindex:
         return Partindex(set_data, is_pos, self.doc_last)
 
     def add_doc(self, doc_url, words):
-
         self.doc_last += 1
         self.urls.append(doc_url)
         # self.update_min_max(doc_url)
@@ -72,6 +71,7 @@ class Docindex:
         #     res_elem = self.urls[i - 1]
         #     res.append(res_elem)
         # return res
+        inds = sorted(list(inds))
         return [self.urls[i - 1] for i in inds]
 
 
