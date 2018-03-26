@@ -2,3 +2,7 @@ raz&(dva | tri)
 raz|(dva | tri)
 raz|(dva & tri)
 raz&dva & tri
+raz&dva & !tri
+!dva
+unknown
+!unknown

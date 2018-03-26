@@ -43,7 +43,7 @@ if __name__ == '__main__':
     for i, doc in enumerate(reader):
         print "%s\t%d bytes" % (doc.url, len(doc.text))
         words = extract_words(doc.text)
-        di.add_doc_words(i, words)
+        di.add_doc(i, words)
         # for word in words:
         #     print(word)
         # print di.data
