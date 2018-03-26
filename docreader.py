@@ -5,6 +5,8 @@ import struct
 import gzip
 import sys
 
+from docindex import Docindex
+from doc2words import extract_words
 
 class DocumentStreamReader:
     def __init__(self, paths):
@@ -35,6 +37,15 @@ def parse_command_line():
 
 
 if __name__ == '__main__':
+    di = Docindex()
+    # di.from_file('index.pickle')
     reader = DocumentStreamReader(parse_command_line().files)
-    for doc in reader:
+    for i, doc in enumerate(reader):
         print "%s\t%d bytes" % (doc.url, len(doc.text))
+        words = extract_words(doc.text)
+        di.add_doc_words(i, words)
+        # for word in words:
+        #     print(word)
+        # print di.data
+        # break
+    di.to_file('index.pickle')

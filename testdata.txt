@@ -1,0 +1,4 @@
+raz&(dva | tri)
+raz|(dva | tri)
+raz|(dva & tri)
+raz&dva & tri
