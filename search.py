@@ -55,7 +55,7 @@ test_searchdata = {
     'dva': set([2]),
     'tri': set([3]),
 }
-indexer = Docindex(test_searchdata)
+# indexer = Docindex(test_searchdata)
 indexer = Docindex().from_file('index.pickle')
 
 class Parser:
@@ -78,8 +78,15 @@ if __name__ == '__main__':
     parser = Parser()
     for line in sys.stdin:
         line = line.strip()
-        print line
+        # print line
+
         # print indexer.data[line]
 
         parsed = parser.parseline(line)
-        print reducer(parsed)
+        result_ids = reducer(parsed).get_as_set()
+        # print(type(result_ids))
+        # for result_id in result_ids:
+        #     print result_id
+        for url in indexer.urls_by_inds(result_ids):
+            print(url)
+        print('-----')
