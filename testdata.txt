@@ -1,3 +1,8 @@
 set
 get
 update
+unknown
+!set
+!get
+!update
+!unknown

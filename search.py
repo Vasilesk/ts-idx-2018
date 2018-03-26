@@ -78,15 +78,16 @@ if __name__ == '__main__':
     parser = Parser()
     for line in sys.stdin:
         line = line.strip()
-        # print line
-
-        # print indexer.data[line]
+        print line
+        line = line.decode('utf-8')
+        line = line.lower()
+        line = line.encode('utf-8')
 
         parsed = parser.parseline(line)
-        result_ids = reducer(parsed).get_as_set()
-        # print(type(result_ids))
-        # for result_id in result_ids:
-        #     print result_id
+        reduced = reducer(parsed)
+        print reduced.count()
+
+        result_ids = reduced.get_as_set()
+
         for url in indexer.urls_by_inds(result_ids):
             print(url)
-        print('-----')

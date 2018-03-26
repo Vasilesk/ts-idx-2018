@@ -100,6 +100,12 @@ class Partindex:
         new_data = self.get_as_set() | other.get_as_set()
         return Partindex(new_data, True, self.doc_last)
 
+    def count(self):
+        if self.is_pos:
+            return len(self.data)
+        else:
+            return self.doc_last - len(self.data)
+
     def __str__(self):
         return str(self.get_as_set())
 
