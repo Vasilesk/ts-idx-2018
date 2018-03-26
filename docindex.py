@@ -42,7 +42,7 @@ class Docindex:
         # self.update_min_max(doc_url)
 
         for word in words:
-            word = word.encode('utf-8')
+            # word = word.encode('utf-8')
             if word not in self.data:
                 self.data[word] = set()
             self.data[word].add(self.doc_last)

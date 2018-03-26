@@ -5,8 +5,6 @@ import sys
 from pyparsing import *
 from docindex import Docindex
 
-alpha_ru = '!абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
-
 def joiner(x, y, elem):
     return '"' + elem.join([x, y]) + '"'
 
@@ -20,47 +18,34 @@ def reducer(data):
     prev = data[0]
     if type(prev) == list:
         prev = reducer(prev)
-    elif type(prev) == str:
+    elif type(prev) == unicode:
         # first time only
         prev = indexer.get(prev)
-        # prev = test_searchdata[prev]
 
     for operand, action in zip(operands, actions):
         if action == '&':
-            # action = lambda x, y: str(len(x) * len(y))
-            # action = lambda x, y: joiner(x, y, '&')
-            # action = lambda x, y: x & y
             action = lambda x, y: x.op_and(y)
         elif action == '|':
-            # action = lambda x, y: str(len(x) + len(y))
-            # action = lambda x, y: joiner(x, y, '|')
-            # action = lambda x, y: x | y
             action = lambda x, y: x.op_or(y)
-            # action = sum
         else:
             raise Exception('unknown action {}'.format(action))
 
         if type(operand) == list:
             operand = reducer(operand)
-        elif type(operand) == str:
+        elif type(operand) == unicode:
             operand = indexer.get(operand)
-            # operand = test_searchdata[operand]
 
         prev = action(prev, operand)
 
     return prev
 
-test_searchdata = {
-    'raz': set([1,2,3]),
-    'dva': set([2]),
-    'tri': set([3]),
-}
-# indexer = Docindex(test_searchdata)
 indexer = Docindex().from_file('index.pickle')
 
+
 class Parser:
+    alpha_ru = u'!абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
     def __init__(self):
-        word = Word(alphas + alpha_ru)
+        word = Word(alphas + self.alpha_ru)
         bin_op = Word("&|", max=1)
 
         expr = Forward()
@@ -81,7 +66,7 @@ if __name__ == '__main__':
         print line
         line = line.decode('utf-8')
         line = line.lower()
-        line = line.encode('utf-8')
+        # line = line.encode('utf-8')
 
         parsed = parser.parseline(line)
         reduced = reducer(parsed)
