@@ -72,7 +72,7 @@ if __name__ == '__main__':
         reduced = reducer(parsed)
         print reduced.count()
 
-        result_ids = reduced.get_as_set()
+        result_ids = reduced.get_stored()
 
         for url in indexer.urls_by_inds(result_ids):
             print(url)

@@ -6,45 +6,26 @@ class Docindex:
         self.urls = []
 
         self.data = dict()
-        # self.min_id = -1
-        # self.max_id = -1
-
-        # if data is None:
-        #     self.data = dict()
-        # else:
-        #     self.data = data
-        #     for word in data:
-        #         max_id = max(data[word])
-        #         min_id = min(data[word])
-
-            # self.update_min_max(min_id)
-            # self.update_min_max(max_id)
-
-    # def update_min_max(self, new_id):
-    #     if new_id > self.max_id:
-    #         self.max_id = new_id
-    #     if new_id < self.min_id or self.min_id < 0:
-    #         self.min_id = new_id
 
     def get(self, key):
         is_pos = key[0] != '!'
         key = key if is_pos else key[1:]
         if key in self.data:
-            set_data = self.data[key]
+            stored_data = self.data[key]
         else:
-            set_data = set()
-        return Partindex(set_data, is_pos, self.doc_last)
+            stored_data = []
+        return Partindex(stored_data, is_pos, self.doc_last)
 
     def add_doc(self, doc_url, words):
         self.doc_last += 1
         self.urls.append(doc_url)
-        # self.update_min_max(doc_url)
 
         for word in words:
             # word = word.encode('utf-8')
             if word not in self.data:
-                self.data[word] = set()
-            self.data[word].add(self.doc_last)
+                self.data[word] = [self.doc_last]
+            else:
+                self.data[word].append(self.doc_last)
 
     def to_file(self, filename):
         with open(filename, 'w') as f:
@@ -56,48 +37,96 @@ class Docindex:
             self.data = new_data.data
             self.doc_last = new_data.doc_last
             self.urls = new_data.urls
-            # self.min_id = new_data.min_id
-            # self.max_id = new_data.max_id
 
         return self
 
     def urls_by_inds(self, inds):
-        # print self.doc_last
-        # print len(self.urls)
-        # print '....'
-        # res = []
-        # for i in inds:
-        #     print i - 1
-        #     res_elem = self.urls[i - 1]
-        #     res.append(res_elem)
-        # return res
         inds = sorted(list(inds))
         return [self.urls[i - 1] for i in inds]
 
+def merge(l1,l2):
+    if not l1:  l2
+    if not l2:  l1
+
+    result = []
+    itx = iter(l1)
+    ity = iter(l2)
+    x = itx.next()
+    y = ity.next()
+
+    try:
+        while True:
+            while x != y:
+                if x < y:
+                    result.append(x)
+                    x = itx.next()
+                else:
+                    result.append(y)
+                    y = ity.next()
+            result.append(x)
+            x = itx.next()
+            y = ity.next()
+
+    except StopIteration:
+        pass
+
+    if x > result[-1]:
+        result.append(x)
+
+    if y > result[-1]:
+        result.append(y)
+
+    result.extend(itx)
+    result.extend(ity)
+
+
+    return result
+
+def cross(l1,l2):
+    if not l1:  return []
+    if not l2:  return []
+
+    result = []
+    itx = iter(l1)
+    ity = iter(l2)
+    y = ity.next()
+    x = itx.next()
+
+    try:
+        while True:
+            while x != y:
+                if x < y:
+                    x = itx.next()
+                else:
+                    y = ity.next()
+            result.append(x)
+            x = itx.next()
+            y = ity.next()
+
+    except StopIteration:
+        pass
+
+    return result
 
 class Partindex:
-    def __init__(self, set_data, is_pos, doc_last):
-        self.data = set_data
+    def __init__(self, stored_data, is_pos, doc_last):
+        stored_data = sorted(stored_data)
+        self.data = stored_data
         self.is_pos = is_pos
         self.doc_last = doc_last
-        # self.min_id = min_id
-        # self.max_id = max_id
 
-        # self.iteration = None
-
-    def get_as_set(self):
+    def get_stored(self):
         if self.is_pos:
             return self.data
         else:
-            return set([x for x in xrange(1, self.doc_last+1) if x not in self.data])
-            # raise Exception('trying to fetch data for negative request')
+            return list([x for x in xrange(1, self.doc_last+1) if x not in self.data])
 
     def op_and(self, other):
-        new_data = self.get_as_set() & other.get_as_set()
+        new_data = cross(self.get_stored(), other.get_stored())
         return Partindex(new_data, True, self.doc_last)
 
     def op_or(self, other):
-        new_data = self.get_as_set() | other.get_as_set()
+        new_data = merge(self.get_stored(), other.get_stored())
         return Partindex(new_data, True, self.doc_last)
 
     def count(self):
@@ -107,7 +136,7 @@ class Partindex:
             return self.doc_last - len(self.data)
 
     def __str__(self):
-        return str(self.get_as_set())
+        return str(self.get_stored())
 
     # def __iter__(self):
     #     return self
