@@ -52,4 +52,4 @@ if __name__ == '__main__':
         # print di.data
         # break
 
-    di.to_file('main.pickle', 'data.pickle')
+    di.dump('main.pickle', 'data.pickle')

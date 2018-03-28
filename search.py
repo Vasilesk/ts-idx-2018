@@ -57,7 +57,7 @@ class Parser:
         return self.expr.parseString(line).asList()
 
 if __name__ == '__main__':
-    indexer = Docindex().from_file('main.pickle', 'data.pickle')
+    indexer = Docindex().load('main.pickle', 'data.pickle')
 
     parser = Parser()
     for line in sys.stdin:

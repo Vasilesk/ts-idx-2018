@@ -12,7 +12,7 @@ class Docindex:
         is_pos = key[0] != '!'
         key = key if is_pos else key[1:]
         if key in self.index:
-            stored_data = self.index[key]
+            stored_data = nums_from_varbyte(bytearray(self.index[key]))
         else:
             stored_data = []
         return Partindex(stored_data, is_pos, self.doc_last)
@@ -28,7 +28,7 @@ class Docindex:
             else:
                 num_to_varbyte_stream(self.doc_last, self.data[word])
 
-    def to_file(self, main, data):
+    def dump(self, main, data):
         self.word_next_pos = []
         with open(data, 'w') as f:
             for word in self.data:
@@ -40,7 +40,7 @@ class Docindex:
         with open(main, 'w') as f:
             pickle.dump(self, f)
 
-    def from_file(self, main, data):
+    def load(self, main, data):
         with open(main, 'r') as f:
             new_data = pickle.load(f)
             self.doc_last = new_data.doc_last
@@ -53,9 +53,8 @@ class Docindex:
         with open(data, 'r') as f:
             for word, pos in word_next_pos:
                 word_bytes = f.read(pos - prev_pos)
-                doc_ids = nums_from_varbyte(bytearray(word_bytes))
 
-                self.index[word] = doc_ids
+                self.index[word] = word_bytes
                 prev_pos = pos
 
         return self
