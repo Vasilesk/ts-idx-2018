@@ -1,3 +1,4 @@
+import io
 import pickle
 
 class Docindex:
@@ -10,8 +11,8 @@ class Docindex:
     def get(self, key):
         is_pos = key[0] != '!'
         key = key if is_pos else key[1:]
-        if key in self.data:
-            stored_data = self.data[key]
+        if key in self.index:
+            stored_data = self.index[key]
         else:
             stored_data = []
         return Partindex(stored_data, is_pos, self.doc_last)
@@ -23,20 +24,39 @@ class Docindex:
         for word in words:
             # word = word.encode('utf-8')
             if word not in self.data:
-                self.data[word] = [self.doc_last]
+                self.data[word] = num_to_varbyte_stream(self.doc_last, io.BytesIO(b""))
             else:
-                self.data[word].append(self.doc_last)
+                num_to_varbyte_stream(self.doc_last, self.data[word])
 
-    def to_file(self, filename):
-        with open(filename, 'w') as f:
+    def to_file(self, main, data):
+        self.word_next_pos = []
+        with open(data, 'w') as f:
+            for word in self.data:
+                f.write(self.data[word].getvalue())
+                self.word_next_pos.append((word, f.tell()))
+
+        self.data = dict()
+
+        with open(main, 'w') as f:
             pickle.dump(self, f)
 
-    def from_file(self, filename):
-        with open(filename, 'r') as f:
+    def from_file(self, main, data):
+        with open(main, 'r') as f:
             new_data = pickle.load(f)
-            self.data = new_data.data
             self.doc_last = new_data.doc_last
             self.urls = new_data.urls
+            word_next_pos = new_data.word_next_pos
+
+        self.index = dict()
+
+        prev_pos = 0
+        with open(data, 'r') as f:
+            for word, pos in word_next_pos:
+                word_bytes = f.read(pos - prev_pos)
+                doc_ids = nums_from_varbyte(bytearray(word_bytes))
+
+                self.index[word] = doc_ids
+                prev_pos = pos
 
         return self
 
@@ -44,9 +64,53 @@ class Docindex:
         inds = sorted(list(inds))
         return [self.urls[i - 1] for i in inds]
 
+def nums_from_varbyte(varbyte):
+    res = []
+    mask = 127
+    mask_end = 128
+
+    elem = 0
+    elem_size = 0
+    for x in varbyte:
+        elem = elem << 7
+        elem += x & mask
+        elem_size += 1
+        if x & mask_end:
+            new_elem = 0
+            while elem_size != 0:
+                new_elem = new_elem << 7
+                new_elem += elem & mask
+                elem = elem >> 7
+                elem_size -= 1
+            res.append(new_elem)
+
+            elem_size = 0
+            elem = 0
+
+    return res
+
+def num_to_varbyte_stream(num, stream):
+    mask = 127
+    mask_end = 128
+
+    buf = bytearray(1)
+
+    while num != 0:
+        buf[0] = num & mask
+        stream.write(buf)
+        num = num >> 7
+
+    stream.seek(-1, 1)
+    buf[0] |= mask_end
+    stream.write(buf)
+
+    return stream
+
 def merge(l1,l2):
-    if not l1:  l2
-    if not l2:  l1
+    if not l1:
+        return l2
+    if not l2:
+        return l1
 
     result = []
     itx = iter(l1)
@@ -83,8 +147,10 @@ def merge(l1,l2):
     return result
 
 def cross(l1,l2):
-    if not l1:  return []
-    if not l2:  return []
+    if not l1:
+        return []
+    if not l2:
+        return []
 
     result = []
     itx = iter(l1)
@@ -119,7 +185,7 @@ class Partindex:
         if self.is_pos:
             return self.data
         else:
-            return list([x for x in xrange(1, self.doc_last+1) if x not in self.data])
+            return [x for x in xrange(1, self.doc_last+1) if x not in self.data]
 
     def op_and(self, other):
         new_data = cross(self.get_stored(), other.get_stored())
@@ -137,6 +203,9 @@ class Partindex:
 
     def __str__(self):
         return str(self.get_stored())
+
+# class Varbyte_storage:
+#     def __init__(self,)
 
     # def __iter__(self):
     #     return self

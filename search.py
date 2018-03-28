@@ -39,9 +39,6 @@ def reducer(data):
 
     return prev
 
-indexer = Docindex().from_file('index.pickle')
-
-
 class Parser:
     alpha_ru = u'!абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
     def __init__(self):
@@ -60,6 +57,8 @@ class Parser:
         return self.expr.parseString(line).asList()
 
 if __name__ == '__main__':
+    indexer = Docindex().from_file('main.pickle', 'data.pickle')
+
     parser = Parser()
     for line in sys.stdin:
         line = line.strip()

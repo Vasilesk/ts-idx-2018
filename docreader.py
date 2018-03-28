@@ -44,11 +44,12 @@ if __name__ == '__main__':
     # print args.encoding
     # print args.files
     for doc in reader:
-        print "%s\t%d bytes" % (doc.url, len(doc.text))
+        # print "%s\t%d bytes" % (doc.url, len(doc.text))
         words = extract_words(doc.text)
         di.add_doc(doc.url, words)
         # for word in words:
         #     print(word)
         # print di.data
         # break
-    di.to_file('index.pickle')
+
+    di.to_file('main.pickle', 'data.pickle')

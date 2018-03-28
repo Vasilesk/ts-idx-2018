@@ -1,1 +1,1 @@
-pip install pyparsing
+pip install pyparsing > /dev/null
