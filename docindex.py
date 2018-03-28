@@ -24,9 +24,11 @@ class Docindex:
         for word in words:
             # word = word.encode('utf-8')
             if word not in self.data:
-                self.data[word] = num_to_varbyte_stream(self.doc_last, io.BytesIO(b""))
+                st = Stream()
+                st.store(self.doc_last)
+                self.data[word] = st
             else:
-                num_to_varbyte_stream(self.doc_last, self.data[word])
+                self.data[word].store(self.doc_last)
 
     def dump(self, main, data):
         self.word_next_pos = []
@@ -35,7 +37,7 @@ class Docindex:
                 f.write(self.data[word].getvalue())
                 self.word_next_pos.append((word, f.tell()))
 
-        self.data = dict()
+        del self.data
 
         with open(main, 'w') as f:
             pickle.dump(self, f)
@@ -63,7 +65,33 @@ class Docindex:
         inds = sorted(list(inds))
         return [self.urls[i - 1] for i in inds]
 
+class Stream:
+    mask = 127
+    mask_end = 128
+
+    def __init__(self):
+        self.last_num = 0
+        self.stream = io.BytesIO(b"")
+        self.getvalue = self.stream.getvalue
+
+    def store(self, num):
+        to_store = num - self.last_num
+        self.last_num = num
+
+        buf = bytearray(1)
+
+        while to_store != 0:
+            buf[0] = to_store & self.mask
+            self.stream.write(buf)
+            to_store = to_store >> 7
+
+        self.stream.seek(-1, 1)
+        buf[0] |= self.mask_end
+        self.stream.write(buf)
+
+# gets bytearray, returns list of numbers
 def nums_from_varbyte(varbyte):
+    last_num = 0
     res = []
     mask = 127
     mask_end = 128
@@ -81,29 +109,14 @@ def nums_from_varbyte(varbyte):
                 new_elem += elem & mask
                 elem = elem >> 7
                 elem_size -= 1
-            res.append(new_elem)
+
+            last_num = new_elem + last_num
+            res.append(last_num)
 
             elem_size = 0
             elem = 0
 
     return res
-
-def num_to_varbyte_stream(num, stream):
-    mask = 127
-    mask_end = 128
-
-    buf = bytearray(1)
-
-    while num != 0:
-        buf[0] = num & mask
-        stream.write(buf)
-        num = num >> 7
-
-    stream.seek(-1, 1)
-    buf[0] |= mask_end
-    stream.write(buf)
-
-    return stream
 
 def merge(l1,l2):
     if not l1:

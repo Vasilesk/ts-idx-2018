@@ -52,4 +52,4 @@ if __name__ == '__main__':
         # print di.data
         # break
 
-    di.dump('main.pickle', 'data.pickle')
+    di.dump('main.pickle', 'index.dat')
