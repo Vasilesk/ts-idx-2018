@@ -1,2 +1,7 @@
 *.pyc
 *~
+old/
+test.py
+data.tgz
+index/
+main.pickle

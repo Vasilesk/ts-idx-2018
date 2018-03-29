@@ -1,6 +1,7 @@
 import io
 import pickle
-
+from socketserver import start_server, send_data
+# hash = lambda x: 0
 class Docindex:
     indexbuckets = 100
 
@@ -13,11 +14,16 @@ class Docindex:
     def get(self, key):
         is_pos = key[0] != '!'
         key = key if is_pos else key[1:]
-        hashkey = hash(key) % self.indexbuckets
-        if key in self.index[hashkey]:
-            stored_data = nums_from_varbyte(bytearray(self.index[hashkey][key]))
-        else:
+        recieved = send_data(key)
+        if recieved == b'':
             stored_data = []
+        else:
+            stored_data = nums_from_varbyte(bytearray(recieved))
+        # hashkey = hash(key) % self.indexbuckets
+        # if key in self.index[hashkey]:
+        #     stored_data = nums_from_varbyte(bytearray(self.index[hashkey][key]))
+        # else:
+        #     stored_data = []
         return Partindex(stored_data, is_pos, self.doc_last)
 
     def add_doc(self, doc_url, words):
@@ -25,7 +31,7 @@ class Docindex:
         self.urls.append(doc_url)
 
         for word in words:
-            # word = word.encode('utf-8')
+            word = word.encode('utf-8')
             shardkey = hash(word) % self.indexbuckets
             if word not in self.data[shardkey]:
                 st = Stream()
@@ -47,7 +53,7 @@ class Docindex:
         with open(main, 'w') as f:
             pickle.dump(self, f)
 
-    def load(self, main, index_template):
+    def load(self, main, index_template = None):
         with open(main, 'r') as f:
             new_data = pickle.load(f)
             self.doc_last = new_data.doc_last
@@ -56,21 +62,36 @@ class Docindex:
 
         self.index = [dict() for _ in xrange(self.indexbuckets)]
 
-        for i in xrange(self.indexbuckets):
-            prev_pos = 0
-            with open(index_template.format(i), 'r') as f:
-                for word, pos in word_next_pos:
-                    key = hash(word) % self.indexbuckets
-                    if key == i:
-                        word_bytes = f.read(pos - prev_pos)
+        if index_template is not None:
+            for i in xrange(self.indexbuckets):
+                prev_pos = 0
+                with open(index_template.format(i), 'r') as f:
+                    for word, pos in word_next_pos:
+                        key = hash(word) % self.indexbuckets
+                        if key == i:
+                            word_bytes = f.read(pos - prev_pos)
 
-                        self.index[key][word] = word_bytes
-                        prev_pos = pos
+                            self.index[key][word] = word_bytes
+                            prev_pos = pos
         return self
 
     def urls_by_inds(self, inds):
         inds = sorted(list(inds))
         return [self.urls[i - 1] for i in inds]
+
+    def as_server(self):
+        def data_proc(input_data):
+            if input_data == ' ':
+                raise Exception('oops')
+            hashkey = hash(input_data) % self.indexbuckets
+            if input_data in self.index[hashkey]:
+                stored_data = self.index[hashkey][input_data]
+            else:
+                stored_data = b''
+
+            return stored_data
+
+        start_server(data_proc)
 
 class Stream:
     mask = 127

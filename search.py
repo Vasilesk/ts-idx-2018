@@ -18,7 +18,7 @@ def reducer(data):
     prev = data[0]
     if type(prev) == list:
         prev = reducer(prev)
-    elif type(prev) == unicode:
+    elif type(prev) == str:
         # first time only
         prev = indexer.get(prev)
 
@@ -32,7 +32,7 @@ def reducer(data):
 
         if type(operand) == list:
             operand = reducer(operand)
-        elif type(operand) == unicode:
+        elif type(operand) == str:
             operand = indexer.get(operand)
 
         prev = action(prev, operand)
@@ -40,7 +40,7 @@ def reducer(data):
     return prev
 
 class Parser:
-    alpha_ru = u'!абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
+    alpha_ru = '!абвгдеёжзийклмнопрстуфхцчшщъыьэюя'
     def __init__(self):
         word = Word(alphas + self.alpha_ru)
         bin_op = Word("&|", max=1)
@@ -57,7 +57,7 @@ class Parser:
         return self.expr.parseString(line).asList()
 
 if __name__ == '__main__':
-    indexer = Docindex().load('main.pickle', 'index/{}.dat')
+    indexer = Docindex().load('main.pickle')
 
     parser = Parser()
     for line in sys.stdin:
@@ -65,7 +65,7 @@ if __name__ == '__main__':
         print line
         line = line.decode('utf-8')
         line = line.lower()
-        # line = line.encode('utf-8')
+        line = line.encode('utf-8')
 
         parsed = parser.parseline(line)
         reduced = reducer(parsed)
