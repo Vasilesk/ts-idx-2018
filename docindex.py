@@ -26,9 +26,12 @@ class Docindex:
         #     stored_data = []
         return Partindex(stored_data, is_pos, self.doc_last)
 
-    def url_by_id(self, url_id):
-        recieved = send_data(' {}'.format(url_id))
-        return recieved
+    def urls_from_server(self, url_ids):
+        url_ids_str = [str(x) for x in url_ids]
+        ids_str = ' ' + ','.join(url_ids_str)
+        recieved = send_data(ids_str)
+
+        return recieved.split('\n')
 
     def add_doc(self, doc_url, words):
         self.doc_last += 1
@@ -94,7 +97,7 @@ class Docindex:
 
     def urls_by_inds(self, inds):
         inds = sorted(list(inds))
-        return [self.url_by_id(i - 1) for i in inds]
+        return self.urls_from_server(inds)
         # return [self.urls[i - 1] for i in inds]
 
     def stop_server(self):
@@ -105,8 +108,9 @@ class Docindex:
             if input_data == ' ':
                 raise Exception('oops')
             elif input_data[0] == ' ':
-                doc_id = int(input_data[1:])
-                return self.urls[doc_id]
+                doc_ids = input_data[1:].split(',')
+                doc_urls = [self.urls[int(i) - 1] for i in doc_ids]
+                return '\n'.join(doc_urls)
 
             hashkey = hash(input_data) % self.indexbuckets
             if input_data in self.index[hashkey]:
