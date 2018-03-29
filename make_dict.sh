@@ -1,2 +1,8 @@
-nohup ./make_dict.py $@ > /dev/null 2> /dev/null < /dev/null
-sleep 20
+#! /bin/sh
+nohup ./make_dict.py > /dev/null 2> /dev/null < /dev/null &
+while [ ! -f trigger ]
+do
+  sleep 2
+done
+sleep 1
+# ls -l /tmp/list.txt

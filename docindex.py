@@ -1,5 +1,5 @@
 import io
-import pickle
+import os
 from socketserver import start_server, send_data
 # hash = lambda x: 0
 class Docindex:
@@ -26,6 +26,10 @@ class Docindex:
         #     stored_data = []
         return Partindex(stored_data, is_pos, self.doc_last)
 
+    def url_by_id(self, url_id):
+        recieved = send_data(' {}'.format(url_id))
+        return recieved
+
     def add_doc(self, doc_url, words):
         self.doc_last += 1
         self.urls.append(doc_url)
@@ -51,18 +55,31 @@ class Docindex:
         del self.data
 
         with open(main, 'w') as f:
-            pickle.dump(self, f)
+            f.write('{}\n'.format(self.doc_last))
+            f.writelines([url + '\n' for url in self.urls])
+            f.write('\n')
+            for word, pos in self.word_next_pos:
+                f.write('{} {}\n'.format(word, pos))
 
     def load(self, main, index_template = None):
         with open(main, 'r') as f:
-            new_data = pickle.load(f)
-            self.doc_last = new_data.doc_last
-            self.urls = new_data.urls
-            word_next_pos = new_data.word_next_pos
+            self.doc_last = int(f.readline().strip())
+            if index_template is not None:
+                self.urls = []
+                url = f.readline()
+                while url != '\n':
+                    self.urls.append(url.strip())
+                    url = f.readline()
 
-        self.index = [dict() for _ in xrange(self.indexbuckets)]
+                word_next_pos = []
+                wp = f.readline()
+                while wp != '':
+                    word, pos = wp.strip().split(' ')
+                    word_next_pos.append((word, int(pos)))
+                    wp = f.readline()
 
         if index_template is not None:
+            self.index = [dict() for _ in xrange(self.indexbuckets)]
             for i in xrange(self.indexbuckets):
                 prev_pos = 0
                 with open(index_template.format(i), 'r') as f:
@@ -77,12 +94,20 @@ class Docindex:
 
     def urls_by_inds(self, inds):
         inds = sorted(list(inds))
-        return [self.urls[i - 1] for i in inds]
+        return [self.url_by_id(i - 1) for i in inds]
+        # return [self.urls[i - 1] for i in inds]
 
-    def as_server(self):
+    def stop_server(self):
+        send_data(' ')
+
+    def as_server(self, trigger_filename):
         def data_proc(input_data):
             if input_data == ' ':
                 raise Exception('oops')
+            elif input_data[0] == ' ':
+                doc_id = int(input_data[1:])
+                return self.urls[doc_id]
+
             hashkey = hash(input_data) % self.indexbuckets
             if input_data in self.index[hashkey]:
                 stored_data = self.index[hashkey][input_data]
@@ -90,6 +115,9 @@ class Docindex:
                 stored_data = b''
 
             return stored_data
+
+        trigger_com = 'touch {}'.format(trigger_filename)
+        os.system(trigger_com)
 
         start_server(data_proc)
 

@@ -57,7 +57,7 @@ class Parser:
         return self.expr.parseString(line).asList()
 
 if __name__ == '__main__':
-    indexer = Docindex().load('main.pickle')
+    indexer = Docindex().load('main.dat')
 
     parser = Parser()
     for line in sys.stdin:
@@ -75,3 +75,5 @@ if __name__ == '__main__':
 
         for url in indexer.urls_by_inds(result_ids):
             print(url)
+
+    indexer.stop_server()

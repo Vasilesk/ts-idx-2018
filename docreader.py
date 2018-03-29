@@ -60,4 +60,4 @@ if __name__ == '__main__':
     for com in bashCommands:
         os.system(com)
 
-    di.dump('main.pickle', 'index/{}.dat')
+    di.dump('main.dat', 'index/{}.dat')
