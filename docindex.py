@@ -3,7 +3,7 @@ import os
 from socketserver import start_server, send_data
 # hash = lambda x: 0
 class Docindex:
-    indexbuckets = 100
+    indexbuckets = 1000
 
     def __init__(self):
         self.doc_last = 0

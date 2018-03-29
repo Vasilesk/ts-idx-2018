@@ -5,4 +5,4 @@ do
   sleep 2
 done
 sleep 1
-# ls -l /tmp/list.txt
+rm trigger
