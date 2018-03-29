@@ -2,17 +2,20 @@ import io
 import pickle
 
 class Docindex:
+    indexbuckets = 100
+
     def __init__(self):
         self.doc_last = 0
         self.urls = []
 
-        self.data = dict()
+        self.data = [dict() for _ in xrange(self.indexbuckets)]
 
     def get(self, key):
         is_pos = key[0] != '!'
         key = key if is_pos else key[1:]
-        if key in self.index:
-            stored_data = nums_from_varbyte(bytearray(self.index[key]))
+        hashkey = hash(key) % self.indexbuckets
+        if key in self.index[hashkey]:
+            stored_data = nums_from_varbyte(bytearray(self.index[hashkey][key]))
         else:
             stored_data = []
         return Partindex(stored_data, is_pos, self.doc_last)
@@ -23,42 +26,46 @@ class Docindex:
 
         for word in words:
             # word = word.encode('utf-8')
-            if word not in self.data:
+            shardkey = hash(word) % self.indexbuckets
+            if word not in self.data[shardkey]:
                 st = Stream()
                 st.store(self.doc_last)
-                self.data[word] = st
+                self.data[shardkey][word] = st
             else:
-                self.data[word].store(self.doc_last)
+                self.data[shardkey][word].store(self.doc_last)
 
-    def dump(self, main, data):
+    def dump(self, main, index_template):
         self.word_next_pos = []
-        with open(data, 'w') as f:
-            for word in self.data:
-                f.write(self.data[word].getvalue())
-                self.word_next_pos.append((word, f.tell()))
+        for i in xrange(self.indexbuckets):
+            with open(index_template.format(i), 'w') as f:
+                for word in self.data[i]:
+                    f.write(self.data[i][word].getvalue())
+                    self.word_next_pos.append((word, f.tell()))
 
         del self.data
 
         with open(main, 'w') as f:
             pickle.dump(self, f)
 
-    def load(self, main, data):
+    def load(self, main, index_template):
         with open(main, 'r') as f:
             new_data = pickle.load(f)
             self.doc_last = new_data.doc_last
             self.urls = new_data.urls
             word_next_pos = new_data.word_next_pos
 
-        self.index = dict()
+        self.index = [dict() for _ in xrange(self.indexbuckets)]
 
-        prev_pos = 0
-        with open(data, 'r') as f:
-            for word, pos in word_next_pos:
-                word_bytes = f.read(pos - prev_pos)
+        for i in xrange(self.indexbuckets):
+            prev_pos = 0
+            with open(index_template.format(i), 'r') as f:
+                for word, pos in word_next_pos:
+                    key = hash(word) % self.indexbuckets
+                    if key == i:
+                        word_bytes = f.read(pos - prev_pos)
 
-                self.index[word] = word_bytes
-                prev_pos = pos
-
+                        self.index[key][word] = word_bytes
+                        prev_pos = pos
         return self
 
     def urls_by_inds(self, inds):

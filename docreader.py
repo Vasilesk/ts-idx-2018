@@ -5,6 +5,8 @@ import struct
 import gzip
 import sys
 
+import os
+
 from docindex import Docindex
 from doc2words import extract_words
 
@@ -51,5 +53,11 @@ if __name__ == '__main__':
         #     print(word)
         # print di.data
         # break
+    bashCommands = [
+        'rm -R index > /dev/null',
+        'mkdir index > /dev/null'
+    ]
+    for com in bashCommands:
+        os.system(com)
 
-    di.dump('main.pickle', 'index.dat')
+    di.dump('main.pickle', 'index/{}.dat')
